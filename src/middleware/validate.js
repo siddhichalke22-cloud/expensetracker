@@ -1,15 +1,19 @@
+function formatZodErrors(error) {
+  const issues = error.issues || error.errors || [];
+  return issues.map(err => ({
+    field: Array.isArray(err.path) ? err.path.join('.') : String(err.path || ''),
+    message: err.message
+  }));
+}
+
 function validateBody(schema) {
   return (req, res, next) => {
     const result = schema.safeParse(req.body);
     if (!result.success) {
-      const errors = result.error.errors.map(err => ({
-        field: err.path.join('.'),
-        message: err.message
-      }));
       return res.status(400).json({
         success: false,
         message: 'Validation error',
-        errors
+        errors: formatZodErrors(result.error)
       });
     }
     req.body = result.data;
@@ -21,14 +25,10 @@ function validateQuery(schema) {
   return (req, res, next) => {
     const result = schema.safeParse(req.query);
     if (!result.success) {
-      const errors = result.error.errors.map(err => ({
-        field: err.path.join('.'),
-        message: err.message
-      }));
       return res.status(400).json({
         success: false,
         message: 'Query parameter validation error',
-        errors
+        errors: formatZodErrors(result.error)
       });
     }
     req.query = result.data;
